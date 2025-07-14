@@ -129,7 +129,7 @@ O frontend está localizado na pasta `frontend/` e oferece uma interface moderna
 
 Após clonar o repositório, execute um dos scripts de inicialização:
 
-**Windows:**
+**Windows (PowerShell/CMD):**
 ```bash
 # Script batch
 start.bat
@@ -138,10 +138,19 @@ start.bat
 powershell -ExecutionPolicy Bypass -File start.ps1
 ```
 
-**Linux/Mac:**
+**Git Bash / Linux / Mac:**
 ```bash
-# Script PowerShell
-pwsh start.ps1
+# Tornar o script executável (apenas na primeira vez)
+chmod +x start.sh
+
+# Executar o script
+./start.sh
+```
+
+**WSL (Windows Subsystem for Linux):**
+```bash
+# Executar o script bash
+bash start.sh
 ```
 
 Os scripts irão:

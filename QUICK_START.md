@@ -13,19 +13,28 @@ Antes de começar, certifique-se de ter instalado:
 
 ### Opção 1: Script Automático (Recomendado)
 
-**Windows:**
+**Windows (PowerShell/CMD):**
 ```bash
-# Execute o script batch
+# Script batch
 start.bat
 
-# Ou execute o script PowerShell
+# Ou script PowerShell
 powershell -ExecutionPolicy Bypass -File start.ps1
 ```
 
-**Linux/Mac:**
+**Git Bash / Linux / Mac:**
 ```bash
-# Execute o script PowerShell (se disponível)
-pwsh start.ps1
+# Tornar o script executável (apenas na primeira vez)
+chmod +x start.sh
+
+# Executar o script
+./start.sh
+```
+
+**WSL (Windows Subsystem for Linux):**
+```bash
+# Executar o script bash
+bash start.sh
 ```
 
 ### Opção 2: Execução Manual
@@ -99,6 +108,15 @@ dotnet build
 # Frontend
 cd frontend
 npm install
+```
+
+### Erro: Permissão negada no Git Bash
+```bash
+# Torne o script executável
+chmod +x start.sh
+
+# Execute novamente
+./start.sh
 ```
 
 ## 📝 Primeiro Acesso
