@@ -123,7 +123,34 @@ O frontend está localizado na pasta `frontend/` e oferece uma interface moderna
 - .NET 8.0 SDK
 - Node.js e npm (para o frontend)
 
-## 🔧 Configuração Backend
+## 🔧 Configuração e Execução
+
+### ⚡ Execução Rápida (Recomendado)
+
+Após clonar o repositório, execute um dos scripts de inicialização:
+
+**Windows:**
+```bash
+# Script batch
+start.bat
+
+# Ou script PowerShell
+powershell -ExecutionPolicy Bypass -File start.ps1
+```
+
+**Linux/Mac:**
+```bash
+# Script PowerShell
+pwsh start.ps1
+```
+
+Os scripts irão:
+- Verificar pré-requisitos (.NET 8.0 SDK e Node.js)
+- Restaurar dependências do backend
+- Instalar dependências do frontend
+- Iniciar ambos os serviços automaticamente
+
+### 🔧 Configuração Manual
 
 1. **Clone o repositório**
    ```bash
@@ -131,24 +158,24 @@ O frontend está localizado na pasta `frontend/` e oferece uma interface moderna
    cd ClienteCRUD
    ```
 
-2. **Restaurar pacotes NuGet**
-   ```bash
-   dotnet restore
-   ```
-
-3. **Configurar banco de dados**
-   - O sistema usa **SQLite** por padrão
-   - O arquivo do banco será criado automaticamente na primeira execução
-
-4. **Executar a aplicação**
+2. **Configurar backend**
    ```bash
    cd ClienteCRUD.API
+   dotnet restore
    dotnet run
    ```
 
-5. **Acessar a API**
-   - URL: `https://localhost:7001`
-   - Swagger UI: `https://localhost:7001/swagger`
+3. **Configurar frontend (em outro terminal)**
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+4. **Acessar a aplicação**
+   - Frontend: `http://localhost:3000`
+   - Backend API: `http://localhost:7001`
+   - Swagger UI: `http://localhost:7001/swagger`
 
 ## 📦 Estrutura do Projeto
 
