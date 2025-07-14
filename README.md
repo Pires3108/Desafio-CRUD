@@ -1,17 +1,71 @@
-# Sistema de Gestão de Funcionários
+# Sistema de Gestão de Funcionários e Equipes (Monorepo)
 
-Sistema completo para gerenciamento de funcionários e equipes com sistema de permissões avançado, desenvolvido em C# com ASP.NET Core Web API.
+Sistema completo para gerenciamento de funcionários e equipes com sistema de permissões avançado, desenvolvido em C# com ASP.NET Core Web API (backend) e React (frontend).
 
 ## 🏗️ Arquitetura
 
-O projeto segue uma arquitetura em camadas (Clean Architecture):
+O projeto segue uma arquitetura em camadas (Clean Architecture) e está organizado como monorepo:
 
 - **ClienteCRUD.Core**: Entidades, interfaces e regras de negócio
 - **ClienteCRUD.Infrastructure**: Implementação do repositório e contexto do Entity Framework
 - **ClienteCRUD.Application**: Serviços, DTOs e mapeamentos
 - **ClienteCRUD.API**: Controllers e configuração da API
+- **frontend**: Aplicação React para interface do usuário
 
-## 🚀 Funcionalidades
+---
+
+## 🌐 Frontend (React)
+
+O frontend está localizado na pasta `frontend/` e oferece uma interface moderna e responsiva para o sistema.
+
+### Principais Funcionalidades
+- Login e cadastro com painel moderno
+- Listagem de equipes e funcionários com permissões (Land Tech Admin, Equipe Admin, Funcionário)
+- Edição inline dos dados do funcionário
+- Consumo de endpoints protegidos por permissão
+- Visual inspirado no site da Land Tech
+
+### Tecnologias Utilizadas
+- React
+- Axios
+- CSS customizado
+
+### Instalação e Execução do Frontend
+
+1. Acesse a pasta do frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+3. Inicie o frontend:
+   ```bash
+   npm start
+   ```
+   O app estará disponível em `http://localhost:3000`.
+
+4. Certifique-se de que o backend C# (.NET) está rodando em `http://localhost:5000` (ou ajuste o endereço no frontend se necessário).
+
+### Permissões e Endpoints Consumidos
+- **Listagem de funcionários:**
+  - `GET /api/clientes/com-permissoes/{funcionarioId}`
+- **Atualização de funcionário:**
+  - `PUT /api/clientes/{id}/com-permissoes?funcionarioLogadoId={funcionarioId}`
+- **Exclusão de funcionário:**
+  - `DELETE /api/clientes/{id}/com-permissoes?funcionarioLogadoId={funcionarioId}`
+- O frontend sempre passa o ID do funcionário logado para garantir as regras de permissão.
+
+### Visual
+- Painéis centrais grandes e modernos para login e cadastro
+- Logo Land Tech destacada
+- Cards de equipe e funcionários com edição inline
+- Responsivo e com visual inspirado no site da Land Tech
+
+---
+
+## 🚀 Funcionalidades Backend
 
 ### ✅ CRUD Completo de Funcionários
 - **Criar**: Cadastrar novos funcionários com vínculo obrigatório a equipe
@@ -53,7 +107,7 @@ O projeto segue uma arquitetura em camadas (Clean Architecture):
 - Datas de cadastro e atualização
 - Status ativo/inativo
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias Utilizadas (Backend)
 
 - **.NET 8.0**
 - **ASP.NET Core Web API**
@@ -67,8 +121,9 @@ O projeto segue uma arquitetura em camadas (Clean Architecture):
 
 - Visual Studio 2022 ou VS Code
 - .NET 8.0 SDK
+- Node.js e npm (para o frontend)
 
-## 🔧 Configuração
+## 🔧 Configuração Backend
 
 1. **Clone o repositório**
    ```bash
@@ -94,150 +149,6 @@ O projeto segue uma arquitetura em camadas (Clean Architecture):
 5. **Acessar a API**
    - URL: `https://localhost:7001`
    - Swagger UI: `https://localhost:7001/swagger`
-
-## 📚 Endpoints da API
-
-### Funcionários
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/clientes` | Listar todos os funcionários |
-| GET | `/api/clientes/com-permissoes/{funcionarioId}` | Listar com permissões |
-| GET | `/api/clientes/{id}` | Buscar funcionário por ID |
-| POST | `/api/clientes` | Criar novo funcionário |
-| PUT | `/api/clientes/{id}` | Atualizar funcionário |
-| DELETE | `/api/clientes/{id}` | Excluir funcionário |
-| POST | `/api/clientes/{id}/reativar` | Reativar funcionário inativo |
-| POST | `/api/clientes/login` | Login de funcionário |
-
-### Equipes
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/equipes` | Listar todas as equipes |
-| GET | `/api/equipes/{id}` | Buscar equipe por ID |
-| POST | `/api/equipes` | Criar nova equipe |
-| PUT | `/api/equipes/{id}` | Atualizar equipe |
-| DELETE | `/api/equipes/{id}` | Excluir equipe |
-
-## 📝 Exemplos de Uso
-
-### Criar Funcionário com Nova Equipe
-```json
-POST /api/clientes
-{
-  "nome": "João Silva",
-  "email": "joao@landtech.com",
-  "telefone": "(11) 99999-9999",
-  "endereco": "Rua das Flores, 123",
-  "cidade": "São Paulo",
-  "estado": "SP",
-  "cep": "01234-567",
-  "usuario": "joao.silva",
-  "senha": "123456",
-  "novaEquipe": "Land Tech"
-}
-```
-
-### Criar Funcionário em Equipe Existente
-```json
-POST /api/clientes
-{
-  "nome": "Maria Santos",
-  "email": "maria@exemplo.com",
-  "telefone": "(11) 88888-8888",
-  "endereco": "Av. Paulista, 1000",
-  "cidade": "São Paulo",
-  "estado": "SP",
-  "cep": "01310-100",
-  "usuario": "maria.santos",
-  "senha": "123456",
-  "equipeId": 1
-}
-```
-
-### Login
-```json
-POST /api/clientes/login
-{
-  "usuario": "joao.silva",
-  "senha": "123456"
-}
-```
-
-### Criar Equipe
-```json
-POST /api/equipes
-{
-  "nome": "Desenvolvimento"
-}
-```
-
-### Listar Funcionários com Permissões
-```json
-GET /api/clientes/com-permissoes/1
-```
-
-## 🔒 Sistema de Permissões
-
-### Land Tech Admin
-- Funcionários da equipe "Land Tech" têm acesso total
-- Podem ver todos os funcionários de todas as equipes
-- Podem gerenciar todas as equipes
-- Campo `IsLandTechAdmin = true`
-
-### Equipe Admin
-- Funcionários que criaram a equipe são admins
-- Podem ver todos os funcionários da sua equipe
-- Campo `IsEquipeAdmin = true`
-
-### Funcionário Normal
-- Veem apenas seus próprios dados
-- Acesso limitado às funcionalidades básicas
-
-## 🗄️ Banco de Dados
-
-### Tabela Funcionarios (antiga Clientes)
-```sql
-CREATE TABLE Funcionarios (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Nome TEXT NOT NULL,
-    Email TEXT NOT NULL UNIQUE,
-    Telefone TEXT,
-    Endereco TEXT,
-    Cidade TEXT,
-    Estado TEXT,
-    Cep TEXT,
-    Usuario TEXT NOT NULL UNIQUE,
-    Senha TEXT NOT NULL,
-    DataCadastro TEXT DEFAULT (CURRENT_TIMESTAMP),
-    DataAtualizacao TEXT,
-    Ativo INTEGER DEFAULT 1,
-    EquipeId INTEGER,
-    IsEquipeAdmin INTEGER DEFAULT 0,
-    IsLandTechAdmin INTEGER DEFAULT 0,
-    CriadoPor TEXT,
-    AtualizadoPor TEXT,
-    FOREIGN KEY (EquipeId) REFERENCES Equipes(Id)
-)
-```
-
-### Tabela Equipes
-```sql
-CREATE TABLE Equipes (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Nome TEXT NOT NULL UNIQUE,
-    DataCadastro TEXT DEFAULT (CURRENT_TIMESTAMP)
-)
-```
-
-## 🧪 Testes
-
-Para testar a API, você pode usar:
-
-1. **Swagger UI**: Acesse `/swagger` na aplicação
-2. **Postman**: Importe a coleção de testes
-3. **cURL**: Use os comandos curl fornecidos
 
 ## 📦 Estrutura do Projeto
 
@@ -267,13 +178,20 @@ ClienteCRUD/
 │   │   └── EquipeService.cs
 │   └── Mapping/
 │       └── AutoMapperProfile.cs
-└── ClienteCRUD.API/
-    ├── Controllers/
-    │   ├── ClientesController.cs
-    │   └── EquipesController.cs
-    ├── Program.cs
-    └── appsettings.json
+├── ClienteCRUD.API/
+│   ├── Controllers/
+│   │   ├── ClientesController.cs
+│   │   └── EquipesController.cs
+│   ├── Program.cs
+│   └── appsettings.json
+└── frontend/
+    ├── public/
+    ├── src/
+    ├── package.json
+    └── ...
 ```
+
+---
 
 ## 🤝 Contribuição
 
@@ -293,4 +211,4 @@ Para dúvidas ou suporte, entre em contato através dos canais disponíveis no r
 
 ---
 
-**Status:** Backend 100% funcional ✅ | Frontend em desenvolvimento 🔄 
+**Status:** Backend 100% funcional ✅ | Frontend presente e integrado ✅ 
