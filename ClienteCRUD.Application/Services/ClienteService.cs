@@ -42,7 +42,13 @@ namespace ClienteCRUD.Application.Services
                 return await _clienteRepository.ObterPorEquipeAsync(funcionario.EquipeId.Value);
             }
 
-            // Funcionário normal vê apenas seus próprios dados
+            // Funcionário comum vê todos os membros da própria equipe
+            if (!funcionario.IsEquipeAdmin && !funcionario.IsLandTechAdmin && funcionario.EquipeId.HasValue)
+            {
+                return await _clienteRepository.ObterPorEquipeAsync(funcionario.EquipeId.Value);
+            }
+
+            // Caso não tenha equipe, retorna apenas a si mesmo
             return new List<Cliente> { funcionario };
         }
 

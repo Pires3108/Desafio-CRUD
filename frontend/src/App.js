@@ -9,6 +9,7 @@ function App() {
   const [screen, setScreen] = useState('login');
   const [loginError, setLoginError] = useState('');
   const [registerError, setRegisterError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState('');
   const [funcionarios, setFuncionarios] = useState([]);
   const [equipes, setEquipes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,8 @@ function App() {
   // --- Estado para edição de funcionário ---
   const [editingFuncionario, setEditingFuncionario] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  // Novo estado para distinguir modo de visualização do modal
+  const [modalModoVisualizacao, setModalModoVisualizacao] = useState(false);
 
   // --- Autenticação ---
   const handleLogin = async ({ login, senha }) => {
@@ -38,10 +41,15 @@ function App() {
   // --- Cadastro de Funcionário ---
   const handleRegister = async (payload) => {
     setRegisterError('');
+    setRegisterSuccess('');
     setLoading(true);
     try {
       await api.post('/api/clientes', payload);
-      setScreen('login'); // Redireciona para login após cadastro
+      setRegisterSuccess('Cadastro realizado com sucesso!');
+      setTimeout(() => {
+        setScreen('login');
+        setRegisterSuccess('');
+      }, 2000);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         setRegisterError(err.response.data.message);
@@ -58,8 +66,10 @@ function App() {
     if (!auth.funcionario) return;
     setLoading(true);
     try {
+      console.log('Usuário logado:', auth.funcionario);
       const response = await api.get(`/api/clientes/com-permissoes/${auth.funcionario.id}`);
       setFuncionarios(response.data);
+      console.log('Funcionarios recebidos do backend:', response.data);
     } catch (error) {
       if (error.response && error.response.status === 403) {
         alert('Você não tem permissão para visualizar esses funcionários.');
@@ -141,6 +151,34 @@ function App() {
   const isLandTechAdmin = !!auth.funcionario?.isLandTechAdmin;
   const isEquipeAdmin = !!auth.funcionario?.isEquipeAdmin;
 
+  // Permissões para edição de funcionário
+  const podeEditarFuncionario = (func) => {
+    // Land Tech Admin pode editar todos
+    if (isLandTechAdmin) return true;
+    
+    // Equipe Admin pode editar funcionários da própria equipe
+    if (isEquipeAdmin && func.equipeId === auth.funcionario.equipeId) return true;
+    
+    // Funcionário comum pode editar apenas a si mesmo
+    if (!isEquipeAdmin && !isLandTechAdmin && func.id === auth.funcionario.id) return true;
+    
+    return false;
+  };
+
+  // Permissões para visualização de funcionário
+  const podeVerFuncionario = (func) => {
+    // Land Tech Admin pode ver todos
+    if (isLandTechAdmin) return true;
+    
+    // Equipe Admin pode ver funcionários da própria equipe
+    if (isEquipeAdmin && func.equipeId === auth.funcionario.equipeId) return true;
+    
+    // Funcionário comum pode ver funcionários da própria equipe
+    if (!isEquipeAdmin && !isLandTechAdmin && func.equipeId === auth.funcionario.equipeId) return true;
+    
+    return false;
+  };
+
   // --- Listagem de Funcionários por Equipe ---
   const funcionariosPorEquipe = equipeId => funcionarios.filter(f => f.equipeId === equipeId);
 
@@ -187,10 +225,20 @@ function App() {
   }
 
   if (screen === 'register') {
-    return <Register onRegister={handleRegister} onShowLogin={() => setScreen('login')} error={registerError} />;
+    return <Register onRegister={handleRegister} onShowLogin={() => setScreen('login')} error={registerError} success={registerSuccess} />;
   }
 
   if (!auth.isLogged || screen !== 'crud') return null;
+
+  // Ordenar equipes: Land Tech sempre no topo
+  const equipesOrdenadas = (isLandTechAdmin ? equipes : equipes.filter(eq => eq.id === auth.funcionario.equipeId)).slice();
+  equipesOrdenadas.sort((a, b) => {
+    const nomeA = (a.nome || '').replace(/\s+/g, '').toLowerCase();
+    const nomeB = (b.nome || '').replace(/\s+/g, '').toLowerCase();
+    if (nomeA === 'landtech') return -1;
+    if (nomeB === 'landtech') return 1;
+    return nomeA.localeCompare(nomeB);
+  });
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #6A0DAD, #9B30FF)' }}>
@@ -212,63 +260,94 @@ function App() {
               <button className="btn btn-red" style={{ backgroundColor: '#f44336', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} disabled>Excluir</button>
             </div>
           </div>
-          {equipes.map(equipe => (
+          {equipesOrdenadas.map(equipe => (
             <div className="equipe-card" key={equipe.id} style={{ backgroundColor: '#f9f9f9', borderRadius: 16, padding: 20, marginTop: 20 }}>
               <div className="equipe-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3>{equipe.nome}</h3>
               </div>
               {funcionariosPorEquipe(equipe.id).map(func => (
-                editingFuncionario && editingFuncionario.id === func.id && showEditModal ? (
-                  <div className="funcionario" key={func.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', marginTop: 15, padding: 16, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                    <form style={{ width: '100%' }} onSubmit={async e => {
-                      e.preventDefault();
-                      await handleUpdateFuncionario(editingFuncionario.id, editingFuncionario);
-                      setShowEditModal(false);
-                      setEditingFuncionario(null);
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <input name="nome" placeholder="Nome" value={editingFuncionario.nome === 'string' ? '' : (editingFuncionario.nome || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, nome: e.target.value })} className="login-input" required />
-                        <input name="email" placeholder="Email" value={editingFuncionario.email === 'string' ? '' : (editingFuncionario.email || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, email: e.target.value })} className="login-input" required />
-                        <input name="telefone" placeholder="Telefone" value={editingFuncionario.telefone === 'string' ? '' : (editingFuncionario.telefone || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, telefone: e.target.value })} className="login-input" />
-                        <input name="endereco" placeholder="Endereço" value={editingFuncionario.endereco === 'string' ? '' : (editingFuncionario.endereco || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, endereco: e.target.value })} className="login-input" />
-                        <input name="cidade" placeholder="Cidade" value={editingFuncionario.cidade === 'string' ? '' : (editingFuncionario.cidade || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, cidade: e.target.value })} className="login-input" />
-                        <input name="estado" placeholder="Estado (ex: SP)" maxLength={2} value={['string','st'].includes(editingFuncionario.estado) ? '' : (editingFuncionario.estado || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, estado: e.target.value.toUpperCase() })} className="login-input" />
-                        <input name="cep" placeholder="CEP" value={editingFuncionario.cep === 'string' ? '' : (editingFuncionario.cep || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, cep: e.target.value })} className="login-input" />
-                        <input name="usuario" placeholder="Usuário" value={editingFuncionario.usuario === 'string' ? '' : (editingFuncionario.usuario || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, usuario: e.target.value })} className="login-input" required />
-                        <input name="senha" type="password" placeholder="Nova senha (opcional)" value={''} onChange={e => setEditingFuncionario({ ...editingFuncionario, senha: e.target.value })} className="login-input" />
+                podeVerFuncionario(func) && (
+                  editingFuncionario && editingFuncionario.id === func.id && showEditModal ? (
+                    modalModoVisualizacao || !podeEditarFuncionario(func) ? (
+                      // Modal somente leitura
+                      <div className="funcionario" key={func.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', marginTop: 15, padding: 16, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <input name="nome" value={editingFuncionario.nome || ''} className="login-input" disabled />
+                          <input name="email" value={editingFuncionario.email || ''} className="login-input" disabled />
+                          <input name="telefone" value={editingFuncionario.telefone || ''} className="login-input" disabled />
+                          <input name="endereco" value={editingFuncionario.endereco || ''} className="login-input" disabled />
+                          <input name="cidade" value={editingFuncionario.cidade || ''} className="login-input" disabled />
+                          <input name="estado" value={editingFuncionario.estado || ''} className="login-input" disabled />
+                          <input name="cep" value={editingFuncionario.cep || ''} className="login-input" disabled />
+                          <input name="usuario" value={editingFuncionario.usuario || ''} className="login-input" disabled />
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+                          <button type="button" className="btn-secondary" onClick={() => { setShowEditModal(false); setEditingFuncionario(null); setModalModoVisualizacao(false); }}>Fechar</button>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-                        <button type="submit" className="btn-success">Salvar</button>
-                        <button type="button" className="btn-secondary" onClick={() => { setShowEditModal(false); setEditingFuncionario(null); }}>Cancelar</button>
+                    ) : (
+                      // Modal de edição com formulário editável
+                      <div className="funcionario" key={func.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', marginTop: 15, padding: 16, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                        <form style={{ width: '100%' }} onSubmit={async e => {
+                          e.preventDefault();
+                          await handleUpdateFuncionario(editingFuncionario.id, editingFuncionario);
+                          setShowEditModal(false);
+                          setEditingFuncionario(null);
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <input name="nome" placeholder="Nome" value={editingFuncionario.nome === 'string' ? '' : (editingFuncionario.nome || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, nome: e.target.value })} className="login-input" required />
+                            <input name="email" placeholder="Email" value={editingFuncionario.email === 'string' ? '' : (editingFuncionario.email || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, email: e.target.value })} className="login-input" required />
+                            <input name="telefone" placeholder="Telefone" value={editingFuncionario.telefone === 'string' ? '' : (editingFuncionario.telefone || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, telefone: e.target.value })} className="login-input" />
+                            <input name="endereco" placeholder="Endereço" value={editingFuncionario.endereco === 'string' ? '' : (editingFuncionario.endereco || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, endereco: e.target.value })} className="login-input" />
+                            <input name="cidade" placeholder="Cidade" value={editingFuncionario.cidade === 'string' ? '' : (editingFuncionario.cidade || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, cidade: e.target.value })} className="login-input" />
+                            <input name="estado" placeholder="Estado (ex: SP)" maxLength={2} value={['string','st'].includes(editingFuncionario.estado) ? '' : (editingFuncionario.estado || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, estado: e.target.value.toUpperCase() })} className="login-input" />
+                            <input name="cep" placeholder="CEP" value={editingFuncionario.cep === 'string' ? '' : (editingFuncionario.cep || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, cep: e.target.value })} className="login-input" />
+                            <input name="usuario" placeholder="Usuário" value={editingFuncionario.usuario === 'string' ? '' : (editingFuncionario.usuario || '')} onChange={e => setEditingFuncionario({ ...editingFuncionario, usuario: e.target.value })} className="login-input" required />
+                            <input name="senha" type="password" placeholder="Nova senha (opcional)" value={''} onChange={e => setEditingFuncionario({ ...editingFuncionario, senha: e.target.value })} className="login-input" />
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+                            <button type="submit" className="btn-success">Salvar</button>
+                            <button type="button" className="btn-secondary" onClick={() => { setShowEditModal(false); setEditingFuncionario(null); setModalModoVisualizacao(false); }}>Cancelar</button>
+                          </div>
+                        </form>
                       </div>
-                    </form>
-                  </div>
-                ) : (
-                  <div className="funcionario" key={func.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, padding: 16, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                    <div className="func-info" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <strong>{func.nome}</strong>
-                        {func.isLandTechAdmin && (
-                          <span className="tag admin" style={{ backgroundColor: '#e0f0ff', color: '#0066cc', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>Land Tech Admin</span>
+                    )
+                  ) : (
+                    <div className="funcionario" key={func.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, padding: 16, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                      <div className="func-info" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <strong>{func.nome}</strong>
+                          {func.isLandTechAdmin && (
+                            <span className="tag admin" style={{ backgroundColor: '#e0f0ff', color: '#0066cc', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>Land Tech Admin</span>
+                          )}
+                          {func.isEquipeAdmin && !func.isLandTechAdmin && (
+                            <span className="tag admin" style={{ backgroundColor: '#e0f0ff', color: '#2979ff', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>Equipe Admin</span>
+                          )}
+                        </div>
+                        {func.email && func.email !== 'string' && <p><strong>Email:</strong> {func.email}</p>}
+                        {func.telefone && func.telefone !== 'string' && <p><strong>Telefone:</strong> {func.telefone}</p>}
+                        {func.endereco && func.endereco !== 'string' && <p><strong>Endereço:</strong> {func.endereco}</p>}
+                        {func.cidade && func.cidade !== 'string' && <p><strong>Cidade:</strong> {func.cidade}</p>}
+                        {func.estado && func.estado !== 'string' && func.estado !== 'st' && <p><strong>Estado:</strong> {func.estado}</p>}
+                        {func.cep && func.cep !== 'string' && <p><strong>CEP:</strong> {func.cep}</p>}
+                        {func.usuario && func.usuario !== 'string' && <p><strong>Usuário:</strong> {func.usuario}</p>}
+                        <p><strong>Equipe:</strong> {func.equipeNome || equipe.nome}</p>
+                      </div>
+                      <div className="status-tags" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <span className="tag ativo" style={{ backgroundColor: '#d4edda', color: '#155724', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>{func.ativo ? 'Ativo' : 'Inativo'}</span>
+                        {podeEditarFuncionario(func) ? (
+                          <>
+                            <button className="btn btn-pink" style={{ backgroundColor: '#f06292', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setEditingFuncionario(func); setShowEditModal(true); setModalModoVisualizacao(false); }}>Editar</button>
+                            <button className="btn btn-red" style={{ backgroundColor: '#f44336', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => handleDeleteFuncionario(func.id)}>Excluir</button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="btn btn-info" style={{ backgroundColor: '#64b5f6', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setEditingFuncionario(func); setShowEditModal(true); setModalModoVisualizacao(true); }}>Visualizar</button>
+                          </>
                         )}
-                        {func.isEquipeAdmin && !func.isLandTechAdmin && (
-                          <span className="tag admin" style={{ backgroundColor: '#e0f0ff', color: '#2979ff', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>Equipe Admin</span>
-                        )}
                       </div>
-                      {func.email && func.email !== 'string' && <p><strong>Email:</strong> {func.email}</p>}
-                      {func.telefone && func.telefone !== 'string' && <p><strong>Telefone:</strong> {func.telefone}</p>}
-                      {func.endereco && func.endereco !== 'string' && <p><strong>Endereço:</strong> {func.endereco}</p>}
-                      {func.cidade && func.cidade !== 'string' && <p><strong>Cidade:</strong> {func.cidade}</p>}
-                      {func.estado && func.estado !== 'string' && func.estado !== 'st' && <p><strong>Estado:</strong> {func.estado}</p>}
-                      {func.cep && func.cep !== 'string' && <p><strong>CEP:</strong> {func.cep}</p>}
-                      {func.usuario && func.usuario !== 'string' && <p><strong>Usuário:</strong> {func.usuario}</p>}
-                      <p><strong>Equipe:</strong> {func.equipeNome || equipe.nome}</p>
                     </div>
-                    <div className="status-tags" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <span className="tag ativo" style={{ backgroundColor: '#d4edda', color: '#155724', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>{func.ativo ? 'Ativo' : 'Inativo'}</span>
-                      <button className="btn btn-pink" style={{ backgroundColor: '#f06292', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setEditingFuncionario(func); setShowEditModal(true); }}>Editar</button>
-                    </div>
-                  </div>
+                  )
                 )
               ))}
             </div>

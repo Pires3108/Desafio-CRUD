@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 
-const Register = ({ onRegister, onShowLogin, error }) => {
+const Register = ({ onRegister, onShowLogin, error, success }) => {
   const [form, setForm] = useState({
     nome: '',
     email: '',
@@ -59,6 +59,7 @@ const Register = ({ onRegister, onShowLogin, error }) => {
       </div>
       <div className="cadastro-container" style={{ maxWidth: 600, padding: 64 }}>
         <h2 style={{ fontSize: 2.2 + 'rem', marginBottom: 32 }}>Cadastro de Funcionário</h2>
+        {success && <div className="login-success" style={{ color: '#388e3c', background: '#e8f5e9', border: '1px solid #388e3c', borderRadius: 8, padding: 12, marginBottom: 16, fontWeight: 600, fontSize: 18, textAlign: 'center' }}>{success}</div>}
         <form onSubmit={handleSubmit}>
           <input name="nome" type="text" placeholder="Nome completo" value={form.nome} onChange={handleChange} required className="login-input" style={{ fontSize: 20, height: 48 }} />
           <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required className="login-input" style={{ fontSize: 20, height: 48 }} />
