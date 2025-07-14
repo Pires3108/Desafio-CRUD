@@ -1,0 +1,12 @@
+{
+    "nome": "Joao Silva",
+    "email": "joao@landtech.com",
+    "telefone": "(11) 99999-9999",
+    "endereco": "Rua das Flores, 123",
+    "cidade": "Sao Paulo",
+    "estado": "SP",
+    "cep": "01234-567",
+    "usuario": "joao.silva",
+    "senha": "123456",
+    "novaEquipe": "Land Tech"
+} 
